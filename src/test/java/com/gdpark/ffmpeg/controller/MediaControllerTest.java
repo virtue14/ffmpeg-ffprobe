@@ -25,8 +25,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(MediaController.class)
 class MediaControllerTest {
 
-    @Autowired
     private MockMvc mockMvc;
+    private ObjectMapper objectMapper;
+
+    @Autowired
+    public MediaControllerTest(MockMvc mockMvc, ObjectMapper objectMapper) {
+        this.mockMvc = mockMvc;
+        this.objectMapper = objectMapper;
+    }
 
     @MockBean
     private MediaInfoService mediaInfoService;
@@ -40,9 +46,6 @@ class MediaControllerTest {
     @MockBean
     private FileStorageService fileStorageService;
 
-    @Autowired
-    private ObjectMapper objectMapper;
-
     @Test
     @DisplayName("파일 업로드 API 테스트")
     void uploadFile() throws Exception {
@@ -53,7 +56,7 @@ class MediaControllerTest {
 
         // When & Then
         mockMvc.perform(multipart("/media/upload")
-                .file(file))
+                        .file(file))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("파일 업로드 성공"))
                 .andExpect(jsonPath("$.path").value("/tmp/uploads/uuid_test.mp4"));
@@ -69,8 +72,8 @@ class MediaControllerTest {
 
         // When & Then
         mockMvc.perform(post("/media/frames")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("프레임 추출 완료"))
                 .andExpect(jsonPath("$.outputDir").value("/out/frames_123"));
