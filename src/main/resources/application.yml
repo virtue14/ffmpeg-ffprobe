@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: ffmpeg-ffprobe
+  servlet:
+    multipart:
+      max-file-size: 500MB
+      max-request-size: 1000MB
+
+logging:
+  level:
+    com.gdpark: DEBUG
+
+ffmpeg:
+  ffmpeg-path: /opt/homebrew/bin/ffmpeg
+  ffprobe-path: /opt/homebrew/bin/ffprobe
+  work-dir: ./out
