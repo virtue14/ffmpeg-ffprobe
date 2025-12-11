@@ -19,7 +19,11 @@ repositories {
 }
 
 dependencies {
-	implementation("org.springframework.boot:spring-boot-starter")
+
+    implementation("com.github.haifengl:smile-core:3.1.1")
+    implementation("net.bramp.ffmpeg:ffmpeg:0.6.2")
+
+    implementation("org.springframework.boot:spring-boot-starter")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
