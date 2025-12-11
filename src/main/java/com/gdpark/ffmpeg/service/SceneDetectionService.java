@@ -49,6 +49,7 @@ public class SceneDetectionService {
      * @return 감지된 장면 정보 응답 객체 (총 개수 및 리스트 포함)
      */
     public SceneDetectionResponse detectScenes(String inputPath, double threshold) throws IOException {
+        long startTime = System.currentTimeMillis();
         log.info("장면 감지 분석 시작: Input={}, Threshold={}", inputPath, threshold);
 
         // 결과 저장 디렉토리 생성
@@ -99,7 +100,11 @@ public class SceneDetectionService {
             }
         }
 
-        log.info("장면 감지 및 처리 완료: Total Scenes={}", results.size());
+        long endTime = System.currentTimeMillis();
+        long totalTimeMs = endTime - startTime;
+        log.info("장면 감지 및 처리 완료: Total Scenes={} (총 소요시간: {}ms, 약 {}초)",
+                results.size(), totalTimeMs, String.format("%.1f", totalTimeMs / 1000.0));
+
         return new SceneDetectionResponse(results.size(), results);
     }
 
@@ -176,7 +181,7 @@ public class SceneDetectionService {
     }
 
     /**
-     * 특정 구간의 영상을 잘라내어 저장합니다.
+     * 특정 구간의 영상을 잘라내어 저장합니다. (스트림 복사 방식 적용)
      *
      * @param inputPath  원본 영상 경로
      * @param start      시작 시간 (초)
@@ -184,18 +189,22 @@ public class SceneDetectionService {
      * @param outputPath 저장할 파일 경로
      */
     private void createClip(String inputPath, double start, double duration, String outputPath) throws IOException {
+        long startTime = System.currentTimeMillis();
+
         FFmpegBuilder builder = new FFmpegBuilder()
                 .setInput(inputPath)
                 .overrideOutputFiles(true)
                 .addOutput(outputPath)
                 .setStartOffset((long) (start * 1000), java.util.concurrent.TimeUnit.MILLISECONDS)
                 .setDuration((long) (duration * 1000), java.util.concurrent.TimeUnit.MILLISECONDS)
-                .setVideoCodec("libx264")
-                .setAudioCodec("aac")
-                .setStrict(FFmpegBuilder.Strict.EXPERIMENTAL)
+                .setVideoCodec("copy") // 재인코딩 없이 스트림 복사
+                .setAudioCodec("copy") // 오디오 복사
                 .done();
 
         new FFmpegExecutor(ffmpeg, ffprobe).createJob(builder).run();
+
+        long endTime = System.currentTimeMillis();
+        log.debug("클립 생성 완료: {} (소요시간: {}ms)", outputPath, (endTime - startTime));
     }
 
     /**
