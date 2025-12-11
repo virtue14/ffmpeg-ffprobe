@@ -32,20 +32,18 @@ FFmpeg + FFprobe를 **Spring Boot(Java)에서 프로세스로 호출**하여
 ### Homebrew
 
 ```bash
-
-brew update && brew install ffmpeg```
-
+brew update && brew install ffmpeg
+```
 > Homebrew의 `ffmpeg` 패키지에는 보통 `ffprobe`가 함께 포함됨.
 
 설치 확인:
+```bash
+ffmpeg -version && ffprobe -version
+```
 
 ```bash
-
-ffmpeg -version && ffprobe -version```
-
-```bash
-
-which ffmpeg && which ffprobe```
+which ffmpeg && which ffprobe
+```
 
 ---
 
@@ -54,6 +52,18 @@ which ffmpeg && which ffprobe```
 `application.yml` 예시:
 
 ```yaml
+spring:
+  application:
+    name: ffmpeg-ffprobe
+  servlet:
+    multipart:
+      max-file-size: 500MB
+      max-request-size: 1000MB
+
+logging:
+  level:
+    com.gdpark: DEBUG
+
 ffmpeg:
   ffmpeg-path: /opt/homebrew/bin/ffmpeg
   ffprobe-path: /opt/homebrew/bin/ffprobe
