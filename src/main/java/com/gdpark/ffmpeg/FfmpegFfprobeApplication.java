@@ -1,8 +1,15 @@
 package com.gdpark.ffmpeg;
 
+import com.gdpark.ffmpeg.util.Smile;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+/**
+ * FFmpeg/FFprobe 기반 미디어 처리 애플리케이션의 엔트리 포인트입니다.
+ * <p>
+ * Spring Boot 애플리케이션을 구동하며, 시작 시 Smile ML 테스트 코드를 실행합니다.
+ * </p>
+ */
 @SpringBootApplication
 public class FfmpegFfprobeApplication {
 
@@ -19,6 +26,6 @@ public class FfmpegFfprobeApplication {
             System.out.println("--- Smile ML Error" + e.getMessage());
         }
 
-	}
+    }
 
 }

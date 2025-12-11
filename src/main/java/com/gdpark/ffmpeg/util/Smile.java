@@ -1,4 +1,4 @@
-package com.gdpark.ffmpeg;
+package com.gdpark.ffmpeg.util;
 
 import smile.data.formula.Formula;
 import smile.regression.RandomForest;
@@ -10,7 +10,7 @@ import java.text.ParseException;
 import static smile.io.Read.arff;
 
 public class Smile {
-    void smileRun () throws IOException, ParseException, URISyntaxException {
+    public void smileRun() throws IOException, ParseException, URISyntaxException {
         var iris = arff("iris.arff");
 
         // 랜덤 포레스트 모델 학슴
