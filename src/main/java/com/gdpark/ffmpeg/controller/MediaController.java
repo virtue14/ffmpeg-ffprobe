@@ -18,10 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.time.Duration;
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
-import java.util.List;
+
 import java.util.Map;
 
 @RestController
@@ -70,14 +67,6 @@ public class MediaController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "프레임 추출", description = "지정된 FPS(초당 프레임 수)에 맞춰 이미지를 추출합니다.")
-    @PostMapping("/frames")
-    public ResponseEntity<Map<String, String>> extractFrames(@RequestBody ExtractFrameRequest request)
-            throws IOException {
-        String outputDir = mediaProcessingService.extractFrames(request.path(), request.fps());
-        return ResponseEntity.ok(Map.of("message", "프레임 추출 완료", "outputDir", outputDir));
-    }
-
     @Operation(summary = "오디오 추출", description = "영상에서 오디오 트랙을 추출하여 WAV 파일로 저장합니다.")
     @PostMapping("/audio")
     public ResponseEntity<Map<String, String>> extractAudio(@RequestBody ExtractAudioRequest request)
@@ -88,48 +77,10 @@ public class MediaController {
 
     @Operation(summary = "상세 장면 분석", description = "영상 내 장면 전환을 감지하고, 각 장면의 비디오 클립과 썸네일을 생성하여 상세 정보를 반환합니다.")
     @PostMapping("/scenes")
-    public ResponseEntity<List<SceneResult>> detectScenes(@RequestBody DetectSceneRequest request)
+    public ResponseEntity<SceneDetectionResponse> detectScenes(@RequestBody DetectSceneRequest request)
             throws IOException {
-        List<SceneResult> results = sceneDetectionService.detectScenes(request.path(), request.threshold());
-        return ResponseEntity.ok(results);
+        SceneDetectionResponse response = sceneDetectionService.detectScenes(request.path(), request.threshold());
+        return ResponseEntity.ok(response);
     }
 
-    /**
-     * 비디오 구간 자르기(Clip)
-     * <p>
-     * 영상의 특정 구간(시작 시간 ~ 종료 시간)을 잘라내어 새로운 파일로 저장합니다.
-     * </p>
-     *
-     * @param request 구간 자르기 요청 정보 (경로, 시작 시간, 종료 시간)
-     * @return 생성된 클립 파일 경로
-     * @throws IOException FFmpeg 실행 실패 시
-     */
-    @Operation(summary = "비디오 구간 자르기", description = "영상의 특정 구간(시작 시간 ~ 종료 시간)을 잘라내어 새로운 비디오 파일(MP4)을 생성합니다.")
-    @PostMapping("/clip")
-    public ResponseEntity<Map<String, String>> createClip(@RequestBody CreateClipRequest request) throws IOException {
-        // start, end를 받아서 duration 계산 후 Service 호출
-        // 예시: start="00:00:30", end="00:00:45" -> duration = 15s
-
-        long durationMs = calculateDurationMs(request.start(), request.end());
-
-        String outputPath = mediaProcessingService.createClip(request.path(), request.start(),
-                String.valueOf(durationMs / 1000));
-
-        return ResponseEntity.ok(Map.of("message", "클립 생성 완료", "outputPath", outputPath));
-    }
-
-    /**
-     * 시간 차이(Duration) 계산 헬퍼 메서드
-     *
-     * @param start 시작 시간 (HH:mm:ss)
-     * @param end   종료 시간 (HH:mm:ss)
-     * @return 시간 차이 (밀리초)
-     */
-    private long calculateDurationMs(String start, String end) {
-        // HH:mm:ss 포맷 가정
-        LocalTime startTime = LocalTime.parse(start, DateTimeFormatter.ISO_LOCAL_TIME);
-        LocalTime endTime = LocalTime.parse(end, DateTimeFormatter.ISO_LOCAL_TIME);
-
-        return Duration.between(startTime, endTime).toMillis();
-    }
 }
