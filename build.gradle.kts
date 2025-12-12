@@ -22,6 +22,10 @@ dependencies {
 
     // smile
     implementation("com.github.haifengl:smile-core:3.1.1")
+    
+    // Vosk STT
+    implementation("com.alphacephei:vosk:0.3.38")
+    implementation("net.java.dev.jna:jna:5.13.0")
 
     // ffmpeg
     implementation("net.bramp.ffmpeg:ffmpeg:0.6.2")

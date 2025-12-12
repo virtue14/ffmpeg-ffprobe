@@ -78,7 +78,18 @@ public class MediaProcessingService {
      * @return 추출된 오디오 파일 경로
      */
     public String extractAudio(String inputPath) throws IOException {
-        String fileName = "audio_" + System.currentTimeMillis() + ".wav";
+        return extractAudio(inputPath, 44100);
+    }
+
+    /**
+     * 영상에서 오디오를 추출하여 WAV 파일로 저장합니다.
+     *
+     * @param inputPath  입력 영상 파일 경로
+     * @param sampleRate 오디오 샘플 레이트 (예: 16000, 44100)
+     * @return 추출된 오디오 파일 경로
+     */
+    public String extractAudio(String inputPath, int sampleRate) throws IOException {
+        String fileName = "audio_" + sampleRate + "_" + System.currentTimeMillis() + ".wav";
         Path outputPath = Paths.get(workDir, fileName);
 
         // 작업 디렉토리 생성 확인
@@ -92,8 +103,8 @@ public class MediaProcessingService {
                 .addOutput(outputPath.toString())
                 .disableVideo()
                 .setAudioCodec("pcm_s16le") // wav 표준 코덱
-                .setAudioSampleRate(44100)
-                .setAudioChannels(2)
+                .setAudioSampleRate(sampleRate)
+                .setAudioChannels(1) // STT용은 보통 Mono 권장
                 .done();
 
         run(builder);

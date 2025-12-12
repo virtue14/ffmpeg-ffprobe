@@ -14,3 +14,6 @@ ffmpeg:
   ffmpeg-path: /opt/homebrew/bin/ffmpeg
   ffprobe-path: /opt/homebrew/bin/ffprobe
   work-dir: ./out
+
+vosk:
+  model-path: vosk-model-small-ko-0.22

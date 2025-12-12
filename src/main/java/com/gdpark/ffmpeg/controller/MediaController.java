@@ -5,6 +5,8 @@ import com.gdpark.ffmpeg.service.FileStorageService;
 import com.gdpark.ffmpeg.service.MediaInfoService;
 import com.gdpark.ffmpeg.service.MediaProcessingService;
 import com.gdpark.ffmpeg.service.SceneDetectionService;
+import com.gdpark.ffmpeg.service.SttService;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -35,16 +37,19 @@ public class MediaController {
     private final MediaProcessingService mediaProcessingService;
     private final SceneDetectionService sceneDetectionService;
     private final FileStorageService fileStorageService;
+    private final SttService sttService;
 
     @Autowired
     public MediaController(MediaInfoService mediaInfoService,
             MediaProcessingService mediaProcessingService,
             SceneDetectionService sceneDetectionService,
-            FileStorageService fileStorageService) {
+            FileStorageService fileStorageService,
+            SttService sttService) {
         this.mediaInfoService = mediaInfoService;
         this.mediaProcessingService = mediaProcessingService;
         this.sceneDetectionService = sceneDetectionService;
         this.fileStorageService = fileStorageService;
+        this.sttService = sttService;
     }
 
     @Operation(summary = "파일 업로드", description = "미디어 파일을 서버에 업로드하고 저장된 절대 경로를 반환합니다. 이 경로는 다른 API의 입력값으로 사용됩니다.")
@@ -131,5 +136,25 @@ public class MediaController {
         LocalTime endTime = LocalTime.parse(end, DateTimeFormatter.ISO_LOCAL_TIME);
 
         return Duration.between(startTime, endTime).toMillis();
+    }
+
+    @Operation(summary = "STT 변환", description = "비디오 파일을 업로드하여 오디오를 추출하고, 텍스트로 변환합니다.")
+    @PostMapping(value = "/stt", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<TranscribeResponse> transcribeVideo(
+            @Parameter(description = "업로드할 비디오 파일") @RequestParam("file") MultipartFile file) throws IOException {
+        log.info("STT 요청: {}", file.getOriginalFilename());
+
+        // 1. 파일 저장
+        String storedPath = fileStorageService.storeFile(file);
+
+        // 2. 오디오 추출 (WAV) - Vosk STT를 위해 16kHz로 추출
+        String audioPath = mediaProcessingService.extractAudio(storedPath);
+
+        // 3. STT 변환
+        java.io.File audioFile = new java.io.File(audioPath);
+        String text = sttService.transcribe(audioFile);
+
+        log.info("STT 변환 완료: {}", text);
+        return ResponseEntity.ok(TranscribeResponse.of(text));
     }
 }
