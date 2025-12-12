@@ -10,14 +10,14 @@ import java.text.ParseException;
 import static smile.io.Read.arff;
 
 public class Smile {
-    public void smileRun() throws IOException, ParseException, URISyntaxException {
-        var iris = arff("iris.arff");
+  public void smileRun() throws IOException, ParseException, URISyntaxException {
+    var iris = arff("iris.arff");
 
-        // 랜덤 포레스트 모델 학슴
-        var model = RandomForest.fit(Formula.lhs("class"), iris);
+    // 랜덤 포레스트 모델 학슴
+    var model = RandomForest.fit(Formula.lhs("class"), iris);
 
-        // 결과 출력
-        System.out.println("모델 정확도 및 지표");
-        System.out.println(model.metrics());
-    }
+    // 결과 출력
+    System.out.println("모델 정확도 및 지표");
+    System.out.println(model.metrics());
+  }
 }
