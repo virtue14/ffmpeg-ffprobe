@@ -17,17 +17,22 @@ public class MediaInfoService {
 
   private final FFprobe ffprobe;
 
+  /**
+   * Create a MediaInfoService with the given FFprobe client used to retrieve media metadata.
+   *
+   * @param ffprobe FFprobe client used to probe media files and obtain metadata (codecs, duration, streams, etc.).
+   */
   @Autowired
   public MediaInfoService(FFprobe ffprobe) {
     this.ffprobe = ffprobe;
   }
 
   /**
-   * 미디어 파일의 상세 메타데이터를 조회합니다.
+   * Retrieve detailed metadata for the media file at the given absolute path.
    *
-   * @param inputPath 조회할 미디어 파일의 절대 경로
-   * @return FFprobe 실행 결과 (비디오/오디오 스트림 정보 포함)
-   * @throws IOException FFprobe 실행 실패 시 발생
+   * @param inputPath the absolute path to the media file
+   * @return the FFprobe execution result containing format and stream (audio/video) information
+   * @throws IOException if FFprobe execution fails
    */
   public FFmpegProbeResult getMetadata(String inputPath) throws IOException {
     // FFprobe를 사용하여 미디어 파일 정보를 조회

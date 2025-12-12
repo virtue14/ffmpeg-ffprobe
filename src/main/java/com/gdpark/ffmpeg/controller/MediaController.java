@@ -35,6 +35,14 @@ public class MediaController {
   private final SceneDetectionService sceneDetectionService;
   private final FileStorageService fileStorageService;
 
+  /**
+   * Create a MediaController with its required service dependencies.
+   *
+   * @param mediaInfoService        service used to retrieve media metadata
+   * @param mediaProcessingService  service used to perform media processing tasks (e.g., audio extraction)
+   * @param sceneDetectionService   service used to detect scenes in media files
+   * @param fileStorageService      service used to store uploaded files and provide storage paths
+   */
   @Autowired
   public MediaController(
       MediaInfoService mediaInfoService,
@@ -47,6 +55,14 @@ public class MediaController {
     this.fileStorageService = fileStorageService;
   }
 
+  /**
+   * Uploads a media file and stores it on the server.
+   *
+   * The response body includes a confirmation message and the stored file's absolute path for use with other APIs.
+   *
+   * @param file the media file to upload
+   * @return a ResponseEntity whose body is a map with keys "message" (confirmation text) and "path" (the stored absolute file path)
+   */
   @Operation(
       summary = "파일 업로드",
       description = "미디어 파일을 서버에 업로드하고 저장된 절대 경로를 반환합니다. 이 경로는 다른 API의 입력값으로 사용됩니다.")
@@ -59,6 +75,13 @@ public class MediaController {
     return ResponseEntity.ok(Map.of("message", "파일 업로드 성공", "path", storedPath));
   }
 
+  /**
+   * Retrieve detailed metadata for a video or audio file.
+   *
+   * @param path the server absolute path to the media file
+   * @return a MediaMetadataResponse containing parsed metadata (streams, format, duration, etc.)
+   * @throws IOException if probing the media file fails or IO error occurs during metadata retrieval
+   */
   @Operation(summary = "메타데이터 조회", description = "비디오/오디오 파일의 상세 정보를 조회합니다.")
   @GetMapping("/metadata")
   public ResponseEntity<MediaMetadataResponse> getMetadata(
@@ -72,6 +95,13 @@ public class MediaController {
     return ResponseEntity.ok(response);
   }
 
+  /**
+   * Extracts the audio track from the media at the provided path and saves it as a WAV file.
+   *
+   * @param request request containing the path to the source media file
+   * @return a map with keys "message" and "outputPath"; "outputPath" is the saved WAV file path
+   * @throws IOException if audio extraction or file operations fail
+   */
   @Operation(summary = "오디오 추출", description = "영상에서 오디오 트랙을 추출하여 WAV 파일로 저장합니다.")
   @PostMapping("/audio")
   public ResponseEntity<Map<String, String>> extractAudio(@RequestBody ExtractAudioRequest request)
@@ -80,6 +110,13 @@ public class MediaController {
     return ResponseEntity.ok(Map.of("message", "오디오 추출 완료", "outputPath", outputPath));
   }
 
+  /**
+   * Detects scene boundaries in a video and produces a detailed response that includes per-scene clips and thumbnails.
+   *
+   * @param request contains the input media path and the sensitivity threshold used for scene detection
+   * @return a SceneDetectionResponse containing detected scenes with their metadata, generated clip paths, and thumbnail paths
+   * @throws IOException if an I/O error occurs while processing the media
+   */
   @Operation(
       summary = "상세 장면 분석",
       description = "영상 내 장면 전환을 감지하고, 각 장면의 비디오 클립과 썸네일을 생성하여 상세 정보를 반환합니다.")

@@ -26,10 +26,10 @@ public record MediaMetadataResponse(
     List<Stream> streams) {
 
   /**
-   * `FFmpegProbeResult` 엔티티를 `MediaMetadataResponse` DTO로 변환합니다.
+   * Constructs a MediaMetadataResponse DTO from an FFmpegProbeResult.
    *
-   * @param result FFprobe 실행 결과 객체
-   * @return 변환된 DTO 객체
+   * @param result the FFprobe result to convert into DTO form
+   * @return a MediaMetadataResponse containing filename, duration, size, bitRate, format details, and summarized stream information
    */
   public static MediaMetadataResponse from(FFmpegProbeResult result) {
     return new MediaMetadataResponse(
