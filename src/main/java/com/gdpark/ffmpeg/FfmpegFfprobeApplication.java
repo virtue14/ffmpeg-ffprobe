@@ -12,6 +12,13 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 public class FfmpegFfprobeApplication {
 
+  /**
+   * Application entry point that starts the Spring Boot application and executes the Smile ML routine.
+   *
+   * <p>Starts the Spring application context, runs the Smile ML routine while printing start and end markers to standard output, and prints the routine's exception message to standard output if an error occurs.
+   *
+   * @param args command-line arguments passed to the application
+   */
   public static void main(String[] args) {
     SpringApplication.run(FfmpegFfprobeApplication.class, args);
 

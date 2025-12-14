@@ -27,9 +27,10 @@ public class FileStorageService {
   private final Path fileStorageLocation;
 
   /**
-   * 파일 저장 서비스를 초기화합니다.
+   * Initializes the file storage service and ensures an "uploads" directory exists under the provided work directory.
    *
-   * @param workDir 파일을 저장할 기본 작업 디렉토리 경로
+   * @param workDir the base working directory under which an "uploads" subdirectory will be created for storing files
+   * @throws RuntimeException if the uploads directory cannot be created
    */
   public FileStorageService(@Value("${ffmpeg.work-dir}") String workDir) {
     // 업로드 파일 저장을 위한 디렉토리 (work-dir 하위 uploads)
@@ -43,10 +44,13 @@ public class FileStorageService {
   }
 
   /**
-   * 업로드된 파일을 서버의 지정된 경로에 저장합니다.
+   * Store an uploaded file in the service's configured storage directory.
    *
-   * @param file 업로드할 MultipartFile 객체
-   * @return 저장된 파일의 절대 경로 (String)
+   * The stored filename is prefixed with a UUID and saved under the service's base upload directory.
+   *
+   * @returns the absolute filesystem path of the saved file as a String
+   * @throws RuntimeException if the original filename contains disallowed sequences (e.g., "..")
+   *                          or if an I/O error prevents saving the file
    */
   public String storeFile(MultipartFile file) {
     String originalFileName =
