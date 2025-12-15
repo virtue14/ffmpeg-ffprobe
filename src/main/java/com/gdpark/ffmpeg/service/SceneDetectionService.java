@@ -33,6 +33,13 @@ public class SceneDetectionService {
   private final FFprobe ffprobe;
   private final String workDir;
 
+  /**
+   * Creates a SceneDetectionService configured with the FFmpeg and FFprobe clients and a working directory.
+   *
+   * @param ffmpeg  FFmpeg client used to run encoding and clipping operations
+   * @param ffprobe FFprobe client used to probe media and detect scene timestamps
+   * @param workDir filesystem path used as the base working directory for generated outputs
+   */
   @Autowired
   public SceneDetectionService(
       FFmpeg ffmpeg, FFprobe ffprobe, @Value("${ffmpeg.work-dir}") String workDir) {
@@ -42,11 +49,17 @@ public class SceneDetectionService {
   }
 
   /**
-   * 장면(Scene)을 감지하고 각 장면별 비디오 클립과 대표 썸네일을 생성합니다.
+   * Detects scene boundaries in the given video and produces per-scene video clips and thumbnail images.
    *
-   * @param inputPath 입력 비디오 파일 경로
-   * @param threshold 장면 감지 임계값 (0.0 ~ 1.0)
-   * @return 감지된 장면 정보 응답 객체 (총 개수 및 리스트 포함)
+   * The generated files are written into a timestamped subdirectory of the service's configured work directory.
+   * Segments shorter than 0.5 seconds are skipped. If initial detection yields few scenes the method may retry
+   * with a lower threshold to improve detection. Failures while processing an individual segment are logged and
+   * do not abort processing of other segments.
+   *
+   * @param inputPath the path to the input video file
+   * @param threshold scene detection sensitivity in the range 0.0 to 1.0 (higher values require stronger changes)
+   * @return a SceneDetectionResponse containing the total number of produced scenes and a list of SceneResult entries
+   * @throws IOException if filesystem access or underlying ffmpeg/ffprobe operations fail
    */
   public SceneDetectionResponse detectScenes(String inputPath, double threshold)
       throws IOException {
@@ -117,14 +130,16 @@ public class SceneDetectionService {
   }
 
   /**
-   * 영상 내 장면 전환(Scene Change) 타임스탬프를 감지합니다.
+   * Detects scene-change timestamps in the given video, using ffprobe and an adaptive threshold retry.
    *
-   * <p>1. `pkt_pts_time` 대신 `pts_time`을 사용하여 lavfi 필터 출력 호환성 개선. 2. 1차 시도 실패(장면 감지 0개) 시, 임계값을
-   * 낮춰(Threshold * 0.5) 재시도하는 Adaptive Logic 적용. 3. 재시도 실패 시 10분 단위로 강제 분할하지는 않지만, 로그를 남김.
+   * <p>If the initial detection yields no scene boundaries (apart from the implicit 0.0 start) and the
+   * provided threshold is greater than 0.1, the method retries detection with a reduced threshold
+   * (max(0.05, threshold * 0.5)). If detection still fails, a warning is logged and the original
+   * timestamp list (typically containing only 0.0) is returned.
    *
-   * @param inputPath 입력 파일 경로
-   * @param threshold 장면 감지 임계값
-   * @return 장면 전환이 감지된 시간(초) 리스트
+   * @param inputPath path to the input video file
+   * @param threshold scene-detection sensitivity threshold (higher = stricter)
+   * @return list of scene-change timestamps in seconds (includes 0.0 as the video start)
    */
   private List<Double> detectSceneChanges(String inputPath, double threshold) throws IOException {
     List<Double> timestamps = runFfprobeForSceneDetection(inputPath, threshold);
@@ -148,6 +163,19 @@ public class SceneDetectionService {
     return timestamps;
   }
 
+  /**
+   * Detects scene-change timestamps from the input video using ffprobe's lavfi scene filter.
+   *
+   * <p>Collects frame `pts_time` values (seconds) where the scene score exceeds the given
+   * threshold. The returned list reflects detection order and always includes `0.0` as the first
+   * element. Non-numeric lines from ffprobe's output are ignored. If an error occurs or no scene
+   * changes are detected beyond the start, the list may contain only `0.0`.
+   *
+   * @param inputPath path to the input video file
+   * @param threshold scene detection sensitivity (higher values require a larger visual change to
+   *     register a scene)
+   * @return a list of scene-change timestamps in seconds; first element is `0.0`
+   */
   private List<Double> runFfprobeForSceneDetection(String inputPath, double threshold) {
     List<Double> timestamps = new ArrayList<>();
     timestamps.add(0.0); // 시작점
@@ -193,12 +221,15 @@ public class SceneDetectionService {
   }
 
   /**
-   * 특정 구간의 영상을 잘라내어 저장합니다. (스트림 복사 방식 적용)
+   * Create a video clip from a specified segment of the input video and save it to disk.
    *
-   * @param inputPath 원본 영상 경로
-   * @param start 시작 시간 (초)
-   * @param duration 길이 (초)
-   * @param outputPath 저장할 파일 경로
+   * Uses stream copy for video and audio (no re-encoding), preserving original codecs.
+   *
+   * @param inputPath  path to the source video file
+   * @param start      segment start time in seconds
+   * @param duration   segment duration in seconds
+   * @param outputPath destination file path for the clipped video
+   * @throws IOException if FFmpeg execution or file I/O fails
    */
   private void createClip(String inputPath, double start, double duration, String outputPath)
       throws IOException {
@@ -222,11 +253,12 @@ public class SceneDetectionService {
   }
 
   /**
-   * 특정 시점의 프레임을 추출하여 이미지로 저장합니다.
+   * Extracts a single frame from the video at the specified time and saves it as an image file.
    *
-   * @param inputPath 원본 영상 경로
-   * @param time 추출 시점 (초)
-   * @param outputPath 저장할 이미지 경로
+   * @param inputPath  path to the source video
+   * @param time       timestamp in seconds where the frame will be extracted
+   * @param outputPath destination path for the resulting image
+   * @throws IOException if the frame extraction or file writing fails
    */
   private void extractThumbnail(String inputPath, double time, String outputPath)
       throws IOException {
@@ -244,11 +276,17 @@ public class SceneDetectionService {
   }
 
   /**
-   * 감지된 타임스탬프 목록을 바탕으로 시작/종료 구간(SceneSegment)을 생성합니다.
+   * Converts ordered scene-change timestamps into start/end scene segments.
    *
-   * @param timestamps 장면 전환 타임스탬프 리스트
-   * @param inputPath 영상 전체 길이를 확인하기 위한 파일 경로
-   * @return 구간 정보 리스트
+   * <p>Uses the provided timestamps (in seconds) to produce contiguous SceneSegment entries;
+   * the final segment end is set to the video duration obtained from {@code inputPath} when available.
+   * If video duration cannot be determined, the final segment end defaults to start + 10.0 seconds.
+   * If any computed end is less than or equal to its start, the end is set to start + 5.0 seconds to
+   * guarantee a minimum segment length.</p>
+   *
+   * @param timestamps list of scene-change timestamps in seconds (will be sorted and deduplicated)
+   * @param inputPath path to the input video used to probe total duration
+   * @return a list of SceneSegment objects representing start/end intervals for each scene
    */
   private List<SceneSegment> createSegments(List<Double> timestamps, String inputPath) {
     double totalDuration = 0;
@@ -291,6 +329,11 @@ public class SceneDetectionService {
 
   /** 내부 사용용 구간 정보 레코드 */
   private record SceneSegment(double start, double end) {
+    /**
+     * Get the duration of the scene segment in seconds.
+     *
+     * @return the segment duration in seconds
+     */
     public double duration() {
       return end - start;
     }
