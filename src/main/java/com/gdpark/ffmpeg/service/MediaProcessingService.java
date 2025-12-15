@@ -46,7 +46,7 @@ public class MediaProcessingService {
    * @return 추출된 오디오 파일 경로
    */
   public String extractAudio(String inputPath) throws IOException {
-    return extractAudio(inputPath, 44100);
+    return extractAudio(inputPath, 16000);
   }
 
   /**
@@ -57,7 +57,7 @@ public class MediaProcessingService {
    * @return 추출된 오디오 파일 경로
    */
   public String extractAudio(String inputPath, int sampleRate) throws IOException {
-    String fileName = "audio_" + sampleRate + "_" + System.currentTimeMillis() + ".wav";
+    String fileName = "audio_" + sampleRate + "_" + System.currentTimeMillis() + ".mp3";
     Path outputPath = Paths.get(workDir, fileName);
 
     // 작업 디렉토리 생성 확인
@@ -70,8 +70,9 @@ public class MediaProcessingService {
         .overrideOutputFiles(true)
         .addOutput(outputPath.toString())
         .disableVideo()
-        .setAudioCodec("pcm_s16le") // wav 표준 코덱
+        .setAudioCodec("libmp3lame") // wav 표준 코덱
         .setAudioSampleRate(sampleRate)
+        .setAudioBitRate(128_000)
         .setAudioChannels(1) // STT용은 보통 Mono 권장
         .done();
 
