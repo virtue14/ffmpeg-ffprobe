@@ -29,6 +29,13 @@ public class MediaProcessingService {
   @Value("${ffmpeg.work-dir}")
   private final String workDir;
 
+  /**
+   * Constructs a MediaProcessingService with the required FFmpeg/FFprobe clients and working directory.
+   *
+   * @param ffmpeg  FFmpeg client used to execute encoding commands
+   * @param ffprobe FFprobe client used to probe media files for metadata
+   * @param workDir filesystem path where output files (e.g., extracted audio) will be written
+   */
   @Autowired
   public MediaProcessingService(FFmpeg ffmpeg, FFprobe ffprobe, String workDir) {
     this.ffmpeg = ffmpeg;
@@ -37,10 +44,11 @@ public class MediaProcessingService {
   }
 
   /**
-   * 영상에서 오디오를 추출하여 WAV 파일로 저장합니다.
+   * Extracts audio from the given video file and saves it as a WAV file in the configured work directory.
    *
-   * @param inputPath 입력 영상 파일 경로
-   * @return 추출된 오디오 파일 경로
+   * @param inputPath path to the source video file
+   * @return the filesystem path of the extracted WAV audio file
+   * @throws IOException if an I/O error occurs while preparing the work directory or writing the output file
    */
   public String extractAudio(String inputPath) throws IOException {
     String fileName = "audio_" + System.currentTimeMillis() + ".wav";
@@ -67,6 +75,11 @@ public class MediaProcessingService {
     return outputPath.toString();
   }
 
+  /**
+   * Executes the provided FFmpegBuilder using an FFmpegExecutor.
+   *
+   * @param builder the FFmpegBuilder describing the FFmpeg job to run
+   */
   private void run(FFmpegBuilder builder) {
     FFmpegExecutor executor = new FFmpegExecutor(ffmpeg, ffprobe);
     executor.createJob(builder).run();

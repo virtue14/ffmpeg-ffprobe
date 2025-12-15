@@ -26,10 +26,13 @@ public record MediaMetadataResponse(
     List<Stream> streams) {
 
   /**
-   * `FFmpegProbeResult` 엔티티를 `MediaMetadataResponse` DTO로 변환합니다.
+   * Create a MediaMetadataResponse from an FFmpegProbeResult.
    *
-   * @param result FFprobe 실행 결과 객체
-   * @return 변환된 DTO 객체
+   * Maps the probe result's format fields and streams into the DTO; when a stream's
+   * average frame rate is absent, the stream's `frameRate` is set to "N/A".
+   *
+   * @param result the FFprobe result containing format and stream information
+   * @return a MediaMetadataResponse populated from the provided probe result
    */
   public static MediaMetadataResponse from(FFmpegProbeResult result) {
     return new MediaMetadataResponse(
