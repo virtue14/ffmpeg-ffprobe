@@ -21,8 +21,8 @@ import java.io.InputStream;
 /**
  * Vosk 라이브러리를 사용한 오프라인 STT 서비스 구현체입니다.
  */
-@Service
-@Primary
+// @Service
+// @Primary
 public class VoskSttService implements SttService {
 
     private static final Logger log = LoggerFactory.getLogger(VoskSttService.class);
