@@ -6,10 +6,13 @@ import com.gdpark.ffmpeg.service.MediaInfoService;
 import com.gdpark.ffmpeg.service.MediaProcessingService;
 import com.gdpark.ffmpeg.service.SceneDetectionService;
 import com.gdpark.ffmpeg.service.SttService;
-
+import com.gdpark.ffmpeg.service.VideoClipService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 import net.bramp.ffmpeg.probe.FFmpegProbeResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,10 +21,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.io.IOException;
-
-import java.util.Map;
 
 @RestController
 @RequestMapping("/media")
@@ -37,6 +36,7 @@ public class MediaController {
   private final SceneDetectionService sceneDetectionService;
   private final FileStorageService fileStorageService;
   private final SttService sttService;
+  private final VideoClipService videoClipService;
 
   @Autowired
   public MediaController(
@@ -44,12 +44,14 @@ public class MediaController {
       MediaProcessingService mediaProcessingService,
       SceneDetectionService sceneDetectionService,
       FileStorageService fileStorageService,
-      SttService sttService) {
+      SttService sttService,
+      VideoClipService videoClipService) {
     this.mediaInfoService = mediaInfoService;
     this.mediaProcessingService = mediaProcessingService;
     this.sceneDetectionService = sceneDetectionService;
     this.fileStorageService = fileStorageService;
     this.sttService = sttService;
+    this.videoClipService = videoClipService;
   }
 
   /**
@@ -123,24 +125,33 @@ public class MediaController {
     return ResponseEntity.ok(response);
   }
 
-  @Operation(summary = "STT 변환", description = "비디오 파일을 업로드하여 오디오를 추출하고, 텍스트로 변환합니다.")
-  @PostMapping(value = "/stt", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  /**
+   * 저장된 비디오 파일의 경로를 입력받아 오디오를 추출하고, 텍스트로 변환(STT)합니다.
+   * 또한 변환된 자막(SRT)을 기반으로 비디오 클립을 생성합니다.
+   *
+   * @param request 비디오 파일 경로를 포함하는 요청 객체
+   * @return 변환된 텍스트와 생성된 클립 정보를 포함하는 TranscribeResponse
+   * @throws IOException 오디오 추출 또는 파일 처리 중 오류 발생 시
+   */
+  @Operation(summary = "STT 변환", description = "서버에 저장된 비디오 파일의 경로를 입력받아 오디오를 추출하고, 텍스트로 변환합니다.")
+  @PostMapping("/stt")
   public ResponseEntity<TranscribeResponse> transcribeVideo(
-      @Parameter(description = "업로드할 비디오 파일") @RequestParam("file") MultipartFile file)
-      throws IOException {
-    log.info("STT 요청: {}", file.getOriginalFilename());
+      @RequestBody TranscribeVideoRequest request) throws IOException {
+    String storedPath = request.path();
+    log.info("STT 요청: {}", storedPath);
 
-    // 1. 파일 저장
-    String storedPath = fileStorageService.storeFile(file);
-
-    // 2. 오디오 추출 (WAV) - Vosk STT를 위해 16kHz로 추출
+    // 오디오 추출 (WAV)
     String audioPath = mediaProcessingService.extractAudio(storedPath);
 
-    // 3. STT 변환
+    // STT 변환
     java.io.File audioFile = new java.io.File(audioPath);
     String text = sttService.transcribe(audioFile);
 
-    log.info("STT 변환 완료: {}", text);
-    return ResponseEntity.ok(TranscribeResponse.of(text));
+    // 클립 생성 (SRT 파싱 및 비디오 자르기)
+    log.info("SRT 기반 클립 생성 시작");
+    List<SceneResult> scenes = videoClipService.createClipsFromSrt(storedPath, text);
+
+    log.info("STT 변환 및 클립 생성 완료: {} scenes", scenes.size());
+    return ResponseEntity.ok(TranscribeResponse.of(text, scenes));
   }
 }
