@@ -1,10 +1,19 @@
 spring:
+  config:
+    import: optional:file:.env[.properties]
   application:
     name: ffmpeg-ffprobe
   servlet:
     multipart:
       max-file-size: 500MB
       max-request-size: 1000MB
+
+server:
+  port: 8082
+
+external:
+  backendcore:
+    stt-url: ${STT_SERVER}
 
 logging:
   level:
@@ -14,5 +23,6 @@ ffmpeg:
   ffmpeg-path: /opt/homebrew/bin/ffmpeg
   ffprobe-path: /opt/homebrew/bin/ffprobe
   work-dir: ./out
-server:
-  port: 8082
+
+vosk:
+  model-path: vosk-model-small-ko-0.22

@@ -5,6 +5,8 @@ import com.gdpark.ffmpeg.service.FileStorageService;
 import com.gdpark.ffmpeg.service.MediaInfoService;
 import com.gdpark.ffmpeg.service.MediaProcessingService;
 import com.gdpark.ffmpeg.service.SceneDetectionService;
+import com.gdpark.ffmpeg.service.SttService;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -23,7 +25,9 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/media")
-@Tag(name = "미디어 컨트롤러 (MediaController)", description = "FFmpeg/FFprobe를 활용한 미디어 처리 API (메타데이터, 프레임/오디오 추출, 구간 편집 등)")
+@Tag(
+    name = "미디어 컨트롤러 (MediaController)",
+    description = "FFmpeg/FFprobe를 활용한 미디어 처리 API (메타데이터, 프레임/오디오 추출, 구간 편집 등)")
 public class MediaController {
 
   private static final Logger log = LoggerFactory.getLogger(MediaController.class);
@@ -32,23 +36,20 @@ public class MediaController {
   private final MediaProcessingService mediaProcessingService;
   private final SceneDetectionService sceneDetectionService;
   private final FileStorageService fileStorageService;
+  private final SttService sttService;
 
-  /**
-   * 필요한 서비스 의존성을 주입받아 MediaController를 생성합니다.
-   *
-   * <p>
-   * 주입된 서비스들은 미디어 메타데이터 조회, 처리, 장면 감지 및 파일 저장을 담당합니다.
-   */
   @Autowired
   public MediaController(
       MediaInfoService mediaInfoService,
       MediaProcessingService mediaProcessingService,
       SceneDetectionService sceneDetectionService,
-      FileStorageService fileStorageService) {
+      FileStorageService fileStorageService,
+      SttService sttService) {
     this.mediaInfoService = mediaInfoService;
     this.mediaProcessingService = mediaProcessingService;
     this.sceneDetectionService = sceneDetectionService;
     this.fileStorageService = fileStorageService;
+    this.sttService = sttService;
   }
 
   /**
@@ -57,7 +58,9 @@ public class MediaController {
    * @param file 저장할 멀티파트 미디어 파일
    * @return 업로드 상태("message")와 저장된 파일의 절대 경로("path")를 담은 맵
    */
-  @Operation(summary = "파일 업로드", description = "미디어 파일을 서버에 업로드하고 저장된 절대 경로를 반환합니다. 이 경로는 다른 API의 입력값으로 사용됩니다.")
+  @Operation(
+      summary = "파일 업로드",
+      description = "미디어 파일을 서버에 업로드하고 저장된 절대 경로를 반환합니다. 이 경로는 다른 API의 입력값으로 사용됩니다.")
   @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public ResponseEntity<Map<String, String>> uploadFile(
       @Parameter(description = "업로드할 미디어 파일") @RequestParam("file") MultipartFile file) {
@@ -109,11 +112,35 @@ public class MediaController {
    * @return 감지된 장면들과 각 장면의 클립 및 썸네일 정보를 포함하는 SceneDetectionResponse
    * @throws IOException 미디어 파일을 읽거나 처리하는 중 오류 발생 시
    */
-  @Operation(summary = "상세 장면 분석", description = "영상 내 장면 전환을 감지하고, 각 장면의 비디오 클립과 썸네일을 생성하여 상세 정보를 반환합니다.")
+  @Operation(
+      summary = "상세 장면 분석",
+      description = "영상 내 장면 전환을 감지하고, 각 장면의 비디오 클립과 썸네일을 생성하여 상세 정보를 반환합니다.")
   @PostMapping("/scenes")
   public ResponseEntity<SceneDetectionResponse> detectScenes(
       @RequestBody DetectSceneRequest request) throws IOException {
-    SceneDetectionResponse response = sceneDetectionService.detectScenes(request.path(), request.threshold());
+    SceneDetectionResponse response =
+        sceneDetectionService.detectScenes(request.path(), request.threshold());
     return ResponseEntity.ok(response);
+  }
+
+  @Operation(summary = "STT 변환", description = "비디오 파일을 업로드하여 오디오를 추출하고, 텍스트로 변환합니다.")
+  @PostMapping(value = "/stt", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  public ResponseEntity<TranscribeResponse> transcribeVideo(
+      @Parameter(description = "업로드할 비디오 파일") @RequestParam("file") MultipartFile file)
+      throws IOException {
+    log.info("STT 요청: {}", file.getOriginalFilename());
+
+    // 1. 파일 저장
+    String storedPath = fileStorageService.storeFile(file);
+
+    // 2. 오디오 추출 (WAV) - Vosk STT를 위해 16kHz로 추출
+    String audioPath = mediaProcessingService.extractAudio(storedPath);
+
+    // 3. STT 변환
+    java.io.File audioFile = new java.io.File(audioPath);
+    String text = sttService.transcribe(audioFile);
+
+    log.info("STT 변환 완료: {}", text);
+    return ResponseEntity.ok(TranscribeResponse.of(text));
   }
 }
