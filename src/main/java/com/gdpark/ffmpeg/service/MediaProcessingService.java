@@ -18,6 +18,8 @@ import java.nio.file.Paths;
 /**
  * 미디어 처리(가공)를 담당하는 서비스입니다.
  *
+ * <p>
+ *
  * <p>FFmpeg를 사용하여 프레임 추출, 오디오 추출, 비디오 클립 생성(자르기) 등의 기능을 수행합니다.
  */
 @Service
@@ -30,11 +32,11 @@ public class MediaProcessingService {
   private final String workDir;
 
   /**
-   * Constructs a MediaProcessingService with the required FFmpeg/FFprobe clients and working directory.
+   * 필요한 FFmpeg/FFprobe 클라이언트와 작업 디렉토리 경로를 주입받아 MediaProcessingService를 생성합니다.
    *
-   * @param ffmpeg  FFmpeg client used to execute encoding commands
-   * @param ffprobe FFprobe client used to probe media files for metadata
-   * @param workDir filesystem path where output files (e.g., extracted audio) will be written
+   * @param ffmpeg FFmpeg 클라이언트 (인코딩 명령어 실행용)
+   * @param ffprobe FFprobe 클라이언트 (미디어 메타데이터 조회용)
+   * @param workDir 결과 파일(예: 추출된 오디오)이 저장될 파일 시스템 경로
    */
   @Autowired
   public MediaProcessingService(FFmpeg ffmpeg, FFprobe ffprobe, String workDir) {
@@ -44,11 +46,11 @@ public class MediaProcessingService {
   }
 
   /**
-   * Extracts audio from the given video file and saves it as a WAV file in the configured work directory.
+   * 비디오 파일에서 오디오를 추출하여 설정된 작업 디렉토리에 WAV 파일로 저장합니다.
    *
-   * @param inputPath path to the source video file
-   * @return the filesystem path of the extracted WAV audio file
-   * @throws IOException if an I/O error occurs while preparing the work directory or writing the output file
+   * @param inputPath 원본 비디오 파일 경로
+   * @return 추출된 WAV 오디오 파일의 파일 시스템 경로
+   * @throws IOException 작업 디렉토리 준비 실패 또는 파일 쓰기 오류 발생 시
    */
   public String extractAudio(String inputPath) throws IOException {
     String fileName = "audio_" + System.currentTimeMillis() + ".wav";
@@ -76,9 +78,9 @@ public class MediaProcessingService {
   }
 
   /**
-   * Executes the provided FFmpegBuilder using an FFmpegExecutor.
+   * FFmpegExecutor를 사용하여 제공된 FFmpegBuilder 작업을 실행합니다.
    *
-   * @param builder the FFmpegBuilder describing the FFmpeg job to run
+   * @param builder 실행할 FFmpeg 작업 내용을 담은 빌더 객체
    */
   private void run(FFmpegBuilder builder) {
     FFmpegExecutor executor = new FFmpegExecutor(ffmpeg, ffprobe);

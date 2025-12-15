@@ -22,7 +22,8 @@ import java.util.List;
 /**
  * 고급 장면 감지(Scene Detection) 및 처리를 담당하는 서비스입니다.
  *
- * <p>영상의 장면 전환을 감지하여 씬별 비디오 클립과 썸네일을 생성합니다.
+ * <p>
+ * 영상의 장면 전환을 감지하여 씬별 비디오 클립과 썸네일을 생성합니다.
  */
 @Service
 public class SceneDetectionService {
@@ -34,11 +35,11 @@ public class SceneDetectionService {
   private final String workDir;
 
   /**
-   * Creates a SceneDetectionService configured with the FFmpeg and FFprobe clients and a working directory.
+   * FFmpeg 및 FFprobe 클라이언트와 작업 디렉토리를 설정하여 SceneDetectionService를 생성합니다.
    *
-   * @param ffmpeg  FFmpeg client used to run encoding and clipping operations
-   * @param ffprobe FFprobe client used to probe media and detect scene timestamps
-   * @param workDir filesystem path used as the base working directory for generated outputs
+   * @param ffmpeg  인코딩 및 영상 타르기 작업을 수행하는 FFmpeg 클라이언트
+   * @param ffprobe 미디어 조사 및 장면 타임스탬프 감지에 사용되는 FFprobe 클라이언트
+   * @param workDir 생성된 결과물이 저장될 기본 작업 디렉토리 경로
    */
   @Autowired
   public SceneDetectionService(
@@ -49,17 +50,18 @@ public class SceneDetectionService {
   }
 
   /**
-   * Detects scene boundaries in the given video and produces per-scene video clips and thumbnail images.
+   * 주어진 비디오에서 장면 경계를 감지하고, 장면별 비디오 클립과 썸네일 이미지를 생성합니다.
    *
-   * The generated files are written into a timestamped subdirectory of the service's configured work directory.
-   * Segments shorter than 0.5 seconds are skipped. If initial detection yields few scenes the method may retry
-   * with a lower threshold to improve detection. Failures while processing an individual segment are logged and
-   * do not abort processing of other segments.
+   * <p>
+   * 생성된 파일들은 서비스에 설정된 작업 디렉토리 내의 타임스탬프가 지정된 하위 디렉토리에 저장됩니다.
+   * 0.5초 미만의 짧은 구간은 스킵됩니다.
+   * 초기 감지 결과가 적을 경우, 감지율을 높이기 위해 더 낮은 임계값으로 재시도할 수 있습니다.
+   * 개별 구간 처리 중 실패하더라도 전체 작업은 중단되지 않고 로그를 남긴 후 계속 진행됩니다.
    *
-   * @param inputPath the path to the input video file
-   * @param threshold scene detection sensitivity in the range 0.0 to 1.0 (higher values require stronger changes)
-   * @return a SceneDetectionResponse containing the total number of produced scenes and a list of SceneResult entries
-   * @throws IOException if filesystem access or underlying ffmpeg/ffprobe operations fail
+   * @param inputPath 입력 비디오 파일 경로
+   * @param threshold 장면 감지 민감도 (0.0 ~ 1.0 범위, 값이 클수록 더 큰 변화가 필요)
+   * @return 생성된 총 장면 수와 SceneResult 항목 목록을 포함하는 SceneDetectionResponse
+   * @throws IOException 파일 시스템 접근 또는 내부 ffmpeg/ffprobe 작업 실패 시
    */
   public SceneDetectionResponse detectScenes(String inputPath, double threshold)
       throws IOException {
@@ -130,16 +132,17 @@ public class SceneDetectionService {
   }
 
   /**
-   * Detects scene-change timestamps in the given video, using ffprobe and an adaptive threshold retry.
+   * FFprobe와 적응형 임계값 재시도(Adaptive Threshold Retry) 로직을 사용하여 영상 내 장면 전환 타임스탬프를
+   * 감지합니다.
    *
-   * <p>If the initial detection yields no scene boundaries (apart from the implicit 0.0 start) and the
-   * provided threshold is greater than 0.1, the method retries detection with a reduced threshold
-   * (max(0.05, threshold * 0.5)). If detection still fails, a warning is logged and the original
-   * timestamp list (typically containing only 0.0) is returned.
+   * <p>
+   * 초기 감지에서 장면 경계가 감지되지 않고(시작점 0.0 제외), 제공된 임계값이 0.1보다 큰 경우,
+   * 더 낮은 임계값(max(0.05, threshold * 0.5))으로 감지를 재시도합니다.
+   * 재시도 후에도 실패할 경우 경고를 로그에 남기고 원본 타임스탬프 리스트(보통 0.0만 포함)를 반환합니다.
    *
-   * @param inputPath path to the input video file
-   * @param threshold scene-detection sensitivity threshold (higher = stricter)
-   * @return list of scene-change timestamps in seconds (includes 0.0 as the video start)
+   * @param inputPath 입력 비디오 파일 경로
+   * @param threshold 장면 감지 민감도 임계값 (클수록 더 엄격함)
+   * @return 장면 전환 타임스탬프(초) 리스트 (비디오 시작점인 0.0 포함)
    */
   private List<Double> detectSceneChanges(String inputPath, double threshold) throws IOException {
     List<Double> timestamps = runFfprobeForSceneDetection(inputPath, threshold);
@@ -164,17 +167,17 @@ public class SceneDetectionService {
   }
 
   /**
-   * Detects scene-change timestamps from the input video using ffprobe's lavfi scene filter.
+   * FFprobe의 lavfi scene 필터를 사용하여 입력 비디오에서 장면 전환 타임스탬프를 감지합니다.
    *
-   * <p>Collects frame `pts_time` values (seconds) where the scene score exceeds the given
-   * threshold. The returned list reflects detection order and always includes `0.0` as the first
-   * element. Non-numeric lines from ffprobe's output are ignored. If an error occurs or no scene
-   * changes are detected beyond the start, the list may contain only `0.0`.
+   * <p>
+   * 장면 점수가 주어진 임계값을 초과하는 프레임의 `pts_time`(초) 값을 수집합니다.
+   * 반환된 리스트는 감지 순서를 반영하며 항상 첫 번째 요소로 `0.0`을 포함합니다.
+   * FFprobe 출력 중 숫자가 아닌 라인은 무시됩니다. 오류가 발생하거나 시작점 외에 감지된 장면이 없는 경우,
+   * 리스트는 `0.0`만 포함할 수 있습니다.
    *
-   * @param inputPath path to the input video file
-   * @param threshold scene detection sensitivity (higher values require a larger visual change to
-   *     register a scene)
-   * @return a list of scene-change timestamps in seconds; first element is `0.0`
+   * @param inputPath 입력 비디오 파일 경로
+   * @param threshold 장면 감지 민감도 (값이 클수록 장면으로 등록되기 위해 더 큰 시각적 변화가 필요함)
+   * @return 장면 전환 타임스탬프(초) 리스트 (첫 번째 요소는 항상 `0.0`)
    */
   private List<Double> runFfprobeForSceneDetection(String inputPath, double threshold) {
     List<Double> timestamps = new ArrayList<>();
@@ -182,28 +185,27 @@ public class SceneDetectionService {
 
     // pkt_pts_time -> pts_time으로 변경 (lavfi 출력 호환성)
     try {
-      ProcessBuilder pb =
-          new ProcessBuilder(
-              "ffprobe",
-              "-v",
-              "error",
-              "-show_entries",
-              "frame=pts_time",
-              "-of",
-              "default=noprint_wrappers=1:nokey=1",
-              "-f",
-              "lavfi",
-              "-i",
-              String.format("movie=%s,select=gt(scene\\,%f)", inputPath, threshold));
+      ProcessBuilder pb = new ProcessBuilder(
+          "ffprobe",
+          "-v",
+          "error",
+          "-show_entries",
+          "frame=pts_time",
+          "-of",
+          "default=noprint_wrappers=1:nokey=1",
+          "-f",
+          "lavfi",
+          "-i",
+          String.format("movie=%s,select=gt(scene\\,%f)", inputPath, threshold));
 
       pb.redirectErrorStream(true);
       Process process = pb.start();
 
-      try (var reader =
-          new java.io.BufferedReader(new java.io.InputStreamReader(process.getInputStream()))) {
+      try (var reader = new java.io.BufferedReader(new java.io.InputStreamReader(process.getInputStream()))) {
         String line;
         while ((line = reader.readLine()) != null) {
-          if (line.isEmpty()) continue;
+          if (line.isEmpty())
+            continue;
           try {
             double t = Double.parseDouble(line.trim());
             timestamps.add(t);
@@ -221,30 +223,30 @@ public class SceneDetectionService {
   }
 
   /**
-   * Create a video clip from a specified segment of the input video and save it to disk.
+   * 입력 비디오의 특정 구간을 잘라내어 비디오 클립을 생성하고 디스크에 저장합니다.
    *
-   * Uses stream copy for video and audio (no re-encoding), preserving original codecs.
+   * <p>
+   * 비디오와 오디오 모두 스트림 복사(재인코딩 없음)를 사용하여 원본 코덱을 유지하며 처리 속도를 높입니다.
    *
-   * @param inputPath  path to the source video file
-   * @param start      segment start time in seconds
-   * @param duration   segment duration in seconds
-   * @param outputPath destination file path for the clipped video
-   * @throws IOException if FFmpeg execution or file I/O fails
+   * @param inputPath  원본 비디오 파일 경로
+   * @param start      구간 시작 시간 (초)
+   * @param duration   구간 길이 (초)
+   * @param outputPath 생성된 클립 비디오의 저장 경로
+   * @throws IOException FFmpeg 실행 또는 파일 I/O 실패 시
    */
   private void createClip(String inputPath, double start, double duration, String outputPath)
       throws IOException {
     long startTime = System.currentTimeMillis();
 
-    FFmpegBuilder builder =
-        new FFmpegBuilder()
-            .setInput(inputPath)
-            .overrideOutputFiles(true)
-            .addOutput(outputPath)
-            .setStartOffset((long) (start * 1000), java.util.concurrent.TimeUnit.MILLISECONDS)
-            .setDuration((long) (duration * 1000), java.util.concurrent.TimeUnit.MILLISECONDS)
-            .setVideoCodec("copy") // 재인코딩 없이 스트림 복사
-            .setAudioCodec("copy") // 오디오 복사
-            .done();
+    FFmpegBuilder builder = new FFmpegBuilder()
+        .setInput(inputPath)
+        .overrideOutputFiles(true)
+        .addOutput(outputPath)
+        .setStartOffset((long) (start * 1000), java.util.concurrent.TimeUnit.MILLISECONDS)
+        .setDuration((long) (duration * 1000), java.util.concurrent.TimeUnit.MILLISECONDS)
+        .setVideoCodec("copy") // 재인코딩 없이 스트림 복사
+        .setAudioCodec("copy") // 오디오 복사
+        .done();
 
     new FFmpegExecutor(ffmpeg, ffprobe).createJob(builder).run();
 
@@ -253,40 +255,39 @@ public class SceneDetectionService {
   }
 
   /**
-   * Extracts a single frame from the video at the specified time and saves it as an image file.
+   * 비디오의 특정 시점에서 단일 프레임을 추출하여 이미지 파일로 저장합니다.
    *
-   * @param inputPath  path to the source video
-   * @param time       timestamp in seconds where the frame will be extracted
-   * @param outputPath destination path for the resulting image
-   * @throws IOException if the frame extraction or file writing fails
+   * @param inputPath  원본 비디오 경로
+   * @param time       프레임을 추출할 시점 (초)
+   * @param outputPath 결과 이미지가 저장될 경로
+   * @throws IOException 프레임 추출 또는 파일 쓰기 실패 시
    */
   private void extractThumbnail(String inputPath, double time, String outputPath)
       throws IOException {
-    FFmpegBuilder builder =
-        new FFmpegBuilder()
-            .setInput(inputPath)
-            .overrideOutputFiles(true)
-            .addOutput(outputPath)
-            .setStartOffset((long) (time * 1000), java.util.concurrent.TimeUnit.MILLISECONDS)
-            .setFrames(1)
-            .setFormat("image2")
-            .done();
+    FFmpegBuilder builder = new FFmpegBuilder()
+        .setInput(inputPath)
+        .overrideOutputFiles(true)
+        .addOutput(outputPath)
+        .setStartOffset((long) (time * 1000), java.util.concurrent.TimeUnit.MILLISECONDS)
+        .setFrames(1)
+        .setFormat("image2")
+        .done();
 
     new FFmpegExecutor(ffmpeg, ffprobe).createJob(builder).run();
   }
 
   /**
-   * Converts ordered scene-change timestamps into start/end scene segments.
+   * 정렬된 장면 전환 타임스탬프를 시작/종료 구간(SceneSegment)으로 변환합니다.
    *
-   * <p>Uses the provided timestamps (in seconds) to produce contiguous SceneSegment entries;
-   * the final segment end is set to the video duration obtained from {@code inputPath} when available.
-   * If video duration cannot be determined, the final segment end defaults to start + 10.0 seconds.
-   * If any computed end is less than or equal to its start, the end is set to start + 5.0 seconds to
-   * guarantee a minimum segment length.</p>
+   * <p>
+   * 제공된 타임스탬프(초)를 사용하여 연속적인 SceneSegment 항목을 생성합니다.
+   * 마지막 구간의 종료 시간은 가능한 경우 {@code inputPath}에서 얻은 비디오 전체 길이로 설정됩니다.
+   * 비디오 길이를 확인할 수 없는 경우, 마지막 구간의 종료 시간은 시작 시간 + 10.0초로 기본 설정됩니다.
+   * 계산된 종료 시간이 시작 시간보다 같거나 작을 경우, 최소 구간 길이를 보장하기 위해 종료 시간을 시작 시간 + 5.0초로 설정합니다.
    *
-   * @param timestamps list of scene-change timestamps in seconds (will be sorted and deduplicated)
-   * @param inputPath path to the input video used to probe total duration
-   * @return a list of SceneSegment objects representing start/end intervals for each scene
+   * @param timestamps 장면 전환 타임스탬프 리스트 (초 단위, 정렬 및 중복 제거됨)
+   * @param inputPath  전체 길이를 조사하기 위한 입력 비디오 경로
+   * @return 각 장면의 시작/종료 구간을 나타내는 SceneSegment 객체 리스트
    */
   private List<SceneSegment> createSegments(List<Double> timestamps, String inputPath) {
     double totalDuration = 0;
@@ -330,9 +331,9 @@ public class SceneDetectionService {
   /** 내부 사용용 구간 정보 레코드 */
   private record SceneSegment(double start, double end) {
     /**
-     * Get the duration of the scene segment in seconds.
+     * 장면 구간의 길이를 초 단위로 반환합니다.
      *
-     * @return the segment duration in seconds
+     * @return 구간 길이 (초)
      */
     public double duration() {
       return end - start;

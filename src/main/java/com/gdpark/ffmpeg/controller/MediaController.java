@@ -23,9 +23,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/media")
-@Tag(
-    name = "미디어 컨트롤러 (MediaController)",
-    description = "FFmpeg/FFprobe를 활용한 미디어 처리 API (메타데이터, 프레임/오디오 추출, 구간 편집 등)")
+@Tag(name = "미디어 컨트롤러 (MediaController)", description = "FFmpeg/FFprobe를 활용한 미디어 처리 API (메타데이터, 프레임/오디오 추출, 구간 편집 등)")
 public class MediaController {
 
   private static final Logger log = LoggerFactory.getLogger(MediaController.class);
@@ -36,10 +34,10 @@ public class MediaController {
   private final FileStorageService fileStorageService;
 
   /**
-   * Create a MediaController with the required service dependencies.
+   * 필요한 서비스 의존성을 주입받아 MediaController를 생성합니다.
    *
-   * The provided services are used to handle media metadata, processing,
-   * scene detection, and file storage for controller endpoints.
+   * <p>
+   * 주입된 서비스들은 미디어 메타데이터 조회, 처리, 장면 감지 및 파일 저장을 담당합니다.
    */
   @Autowired
   public MediaController(
@@ -54,14 +52,12 @@ public class MediaController {
   }
 
   /**
-   * Handle uploading a media file and return the stored absolute path for downstream use.
+   * 미디어 파일을 업로드하고, 이후 작업에서 사용할 수 있도록 저장된 절대 경로를 반환합니다.
    *
-   * @param file the multipart media file to store
-   * @return a map with keys "message" (upload status) and "path" (the stored file's absolute path)
+   * @param file 저장할 멀티파트 미디어 파일
+   * @return 업로드 상태("message")와 저장된 파일의 절대 경로("path")를 담은 맵
    */
-  @Operation(
-      summary = "파일 업로드",
-      description = "미디어 파일을 서버에 업로드하고 저장된 절대 경로를 반환합니다. 이 경로는 다른 API의 입력값으로 사용됩니다.")
+  @Operation(summary = "파일 업로드", description = "미디어 파일을 서버에 업로드하고 저장된 절대 경로를 반환합니다. 이 경로는 다른 API의 입력값으로 사용됩니다.")
   @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public ResponseEntity<Map<String, String>> uploadFile(
       @Parameter(description = "업로드할 미디어 파일") @RequestParam("file") MultipartFile file) {
@@ -72,11 +68,11 @@ public class MediaController {
   }
 
   /**
-   * Retrieve detailed metadata for a media file at the given server path.
+   * 지정된 서버 경로에 있는 미디어 파일의 상세 메타데이터를 조회합니다.
    *
-   * @param path absolute server file path of the media file to probe
-   * @return a MediaMetadataResponse containing format, streams, and other probe information
-   * @throws IOException if probing the file fails or an I/O error occurs
+   * @param path 조사할 미디어 파일의 서버 내 절대 경로
+   * @return 포맷, 스트림 및 기타 조사 정보를 포함하는 MediaMetadataResponse
+   * @throws IOException 파일 조사에 실패하거나 I/O 오류가 발생한 경우
    */
   @Operation(summary = "메타데이터 조회", description = "비디오/오디오 파일의 상세 정보를 조회합니다.")
   @GetMapping("/metadata")
@@ -92,11 +88,11 @@ public class MediaController {
   }
 
   /**
-   * Extracts the audio track from the specified video and saves it as a WAV file.
+   * 지정된 비디오에서 오디오 트랙을 추출하여 WAV 파일로 저장합니다.
    *
-   * @param request request containing the source video's file path
-   * @return a map with keys "message" (operation status) and "outputPath" (path to the saved WAV file)
-   * @throws IOException if audio extraction or file I/O fails
+   * @param request 원본 비디오 파일 경로를 포함하는 요청 객체
+   * @return 작업 상태("message")와 저장된 WAV 파일 경로("outputPath")를 담은 맵
+   * @throws IOException 오디오 추출 또는 파일 I/O 실패 시
    */
   @Operation(summary = "오디오 추출", description = "영상에서 오디오 트랙을 추출하여 WAV 파일로 저장합니다.")
   @PostMapping("/audio")
@@ -107,20 +103,17 @@ public class MediaController {
   }
 
   /**
-   * Detects scene boundaries in the specified media file and returns detailed detection results.
+   * 지정된 미디어 파일에서 장면 경계를 감지하고 상세 감지 결과를 반환합니다.
    *
-   * @param request the request containing the media file path and the threshold used to determine scene changes
-   * @return a SceneDetectionResponse containing detected scenes and associated generated clips and thumbnails
-   * @throws IOException if reading or processing the media file fails
+   * @param request 미디어 파일 경로와 장면 전환 판단에 사용될 임계값을 포함하는 요청 객체
+   * @return 감지된 장면들과 각 장면의 클립 및 썸네일 정보를 포함하는 SceneDetectionResponse
+   * @throws IOException 미디어 파일을 읽거나 처리하는 중 오류 발생 시
    */
-  @Operation(
-      summary = "상세 장면 분석",
-      description = "영상 내 장면 전환을 감지하고, 각 장면의 비디오 클립과 썸네일을 생성하여 상세 정보를 반환합니다.")
+  @Operation(summary = "상세 장면 분석", description = "영상 내 장면 전환을 감지하고, 각 장면의 비디오 클립과 썸네일을 생성하여 상세 정보를 반환합니다.")
   @PostMapping("/scenes")
   public ResponseEntity<SceneDetectionResponse> detectScenes(
       @RequestBody DetectSceneRequest request) throws IOException {
-    SceneDetectionResponse response =
-        sceneDetectionService.detectScenes(request.path(), request.threshold());
+    SceneDetectionResponse response = sceneDetectionService.detectScenes(request.path(), request.threshold());
     return ResponseEntity.ok(response);
   }
 }
