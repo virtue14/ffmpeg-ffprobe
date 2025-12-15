@@ -5,6 +5,4 @@ package com.gdpark.ffmpeg.dto;
  *
  * @param path 대상 비디오 파일 경로
  */
-public record ExtractAudioRequest(
-                String path) {
-}
+public record ExtractAudioRequest(String path) {}

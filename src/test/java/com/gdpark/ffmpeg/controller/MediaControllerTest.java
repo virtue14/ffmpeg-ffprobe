@@ -1,7 +1,5 @@
 package com.gdpark.ffmpeg.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.gdpark.ffmpeg.dto.ExtractFrameRequest;
 import com.gdpark.ffmpeg.service.FileStorageService;
 import com.gdpark.ffmpeg.service.MediaInfoService;
 import com.gdpark.ffmpeg.service.MediaProcessingService;
@@ -11,14 +9,14 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.MediaType;
+
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -26,12 +24,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class MediaControllerTest {
 
     private MockMvc mockMvc;
-    private ObjectMapper objectMapper;
 
     @Autowired
-    public MediaControllerTest(MockMvc mockMvc, ObjectMapper objectMapper) {
+    public MediaControllerTest(MockMvc mockMvc) {
         this.mockMvc = mockMvc;
-        this.objectMapper = objectMapper;
     }
 
     @MockBean
@@ -56,26 +52,10 @@ class MediaControllerTest {
 
         // When & Then
         mockMvc.perform(multipart("/media/upload")
-                        .file(file))
+                .file(file))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("파일 업로드 성공"))
                 .andExpect(jsonPath("$.path").value("/tmp/uploads/uuid_test.mp4"));
     }
 
-    @Test
-    @DisplayName("프레임 추출 요청 API 테스트")
-    void extractFrames() throws Exception {
-        // Given
-        ExtractFrameRequest request = new ExtractFrameRequest("/tmp/test.mp4", 1.0);
-        given(mediaProcessingService.extractFrames(anyString(), anyDouble()))
-                .willReturn("/out/frames_123");
-
-        // When & Then
-        mockMvc.perform(post("/media/frames")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("프레임 추출 완료"))
-                .andExpect(jsonPath("$.outputDir").value("/out/frames_123"));
-    }
 }

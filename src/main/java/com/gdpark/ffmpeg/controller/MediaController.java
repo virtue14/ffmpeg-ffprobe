@@ -20,15 +20,14 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.time.Duration;
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
-import java.util.List;
+
 import java.util.Map;
 
 @RestController
 @RequestMapping("/media")
-@Tag(name = "미디어 컨트롤러 (MediaController)", description = "FFmpeg/FFprobe를 활용한 미디어 처리 API (메타데이터, 프레임/오디오 추출, 구간 편집 등)")
+@Tag(
+    name = "미디어 컨트롤러 (MediaController)",
+    description = "FFmpeg/FFprobe를 활용한 미디어 처리 API (메타데이터, 프레임/오디오 추출, 구간 편집 등)")
 public class MediaController {
 
     private static final Logger log = LoggerFactory.getLogger(MediaController.class);
