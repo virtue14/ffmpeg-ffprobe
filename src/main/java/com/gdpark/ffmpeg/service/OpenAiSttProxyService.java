@@ -2,6 +2,7 @@ package com.gdpark.ffmpeg.service;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Primary;
@@ -29,6 +30,7 @@ public class OpenAiSttProxyService implements SttService {
     private final String backendcoreUrl;
     private final RestTemplate restTemplate;
 
+    @Autowired
     public OpenAiSttProxyService(@Value("${external.backendcore.stt-url}") String backendcoreUrl,
             RestTemplateBuilder restTemplateBuilder) {
         this.backendcoreUrl = backendcoreUrl;

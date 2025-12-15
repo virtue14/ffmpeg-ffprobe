@@ -1,4 +1,6 @@
 spring:
+  config:
+    import: optional:file:.env[.properties]
   application:
     name: ffmpeg-ffprobe
   servlet:
@@ -11,7 +13,7 @@ server:
 
 external:
   backendcore:
-    stt-url: http://localhost:8080/api/ai/stt/transcribe
+    stt-url: ${STT_SERVER}
 
 logging:
   level:
