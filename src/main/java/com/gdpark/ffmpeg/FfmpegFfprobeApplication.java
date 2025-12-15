@@ -22,7 +22,7 @@ public class FfmpegFfprobeApplication {
       smile.smileRun();
       System.out.println("--- Smile ML End");
     } catch (Exception e) {
-      System.out.println("--- Smile ML Error" + e.getMessage());
+      System.err.println("--- Smile ML Error" + e.getMessage());
     }
   }
 }

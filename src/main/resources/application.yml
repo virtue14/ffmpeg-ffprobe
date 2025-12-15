@@ -14,3 +14,5 @@ ffmpeg:
   ffmpeg-path: /opt/homebrew/bin/ffmpeg
   ffprobe-path: /opt/homebrew/bin/ffprobe
   work-dir: ./out
+server:
+  port: 8082
