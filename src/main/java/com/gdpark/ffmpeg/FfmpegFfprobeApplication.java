@@ -12,6 +12,13 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 public class FfmpegFfprobeApplication {
 
+  /**
+   * 스프링 부트 애플리케이션을 시작하고 Smile ML 루틴을 실행하는 진입점입니다.
+   *
+   * <p>애플리케이션 컨텍스트를 시작하고 Smile ML 루틴을 실행하며, 시작과 종료 마커를 출력합니다. 오류 발생 시 예외 메시지를 표준 에러로 출력합니다.
+   *
+   * @param args 애플리케이션에 전달되는 명령줄 인수
+   */
   public static void main(String[] args) {
     SpringApplication.run(FfmpegFfprobeApplication.class, args);
 
@@ -22,7 +29,7 @@ public class FfmpegFfprobeApplication {
       smile.smileRun();
       System.out.println("--- Smile ML End");
     } catch (Exception e) {
-      System.out.println("--- Smile ML Error" + e.getMessage());
+      System.err.println("--- Smile ML Error" + e.getMessage());
     }
   }
 }

@@ -17,17 +17,24 @@ public class MediaInfoService {
 
   private final FFprobe ffprobe;
 
+  /**
+   * 제공된 FFprobe 인스턴스를 사용하여 미디어 파일을 조사하는 MediaInfoService를 생성합니다.
+   *
+   * @param ffprobe 미디어 파일에서 메타데이터를 검색하는 데 사용되는 FFprobe 인스턴스
+   */
   @Autowired
   public MediaInfoService(FFprobe ffprobe) {
     this.ffprobe = ffprobe;
   }
 
   /**
-   * 미디어 파일의 상세 메타데이터를 조회합니다.
+   * FFprobe를 사용하여 미디어 파일의 상세 메타데이터를 조회합니다.
    *
-   * @param inputPath 조회할 미디어 파일의 절대 경로
-   * @return FFprobe 실행 결과 (비디오/오디오 스트림 정보 포함)
-   * @throws IOException FFprobe 실행 실패 시 발생
+   * <p>반환된 조회 결과에는 비디오 및 오디오 스트림 정보뿐만 아니라 포맷 수준의 메타데이터(길이, 비트 전송률, 코덱 등)가 포함됩니다.
+   *
+   * @param inputPath 조사할 미디어 파일의 절대 경로
+   * @return 미디어 파일의 스트림 및 포맷 메타데이터를 포함하는 FFmpegProbeResult
+   * @throws IOException FFprobe 실행에 실패하거나 파일 조사 중 I/O 오류 발생 시
    */
   public FFmpegProbeResult getMetadata(String inputPath) throws IOException {
     // FFprobe를 사용하여 미디어 파일 정보를 조회
