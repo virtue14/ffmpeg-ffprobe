@@ -40,7 +40,7 @@ public class MediaProcessingService {
   }
 
   /**
-   * 영상에서 오디오를 추출하여 WAV 파일로 저장합니다.
+   * 영상에서 오디오를 추출하여 mp3 파일로 저장합니다.
    *
    * @param inputPath 입력 영상 파일 경로
    * @return 추출된 오디오 파일 경로
@@ -70,7 +70,7 @@ public class MediaProcessingService {
         .overrideOutputFiles(true)
         .addOutput(outputPath.toString())
         .disableVideo()
-        .setAudioCodec("libmp3lame") // wav 표준 코덱
+        .setAudioCodec("libmp3lame") // mp3 표준 코덱
         .setAudioSampleRate(sampleRate)
         .setAudioBitRate(128_000)
         .setAudioChannels(1) // STT용은 보통 Mono 권장
