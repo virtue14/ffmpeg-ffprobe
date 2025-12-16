@@ -74,7 +74,8 @@ public class VideoClipService {
                         segment.start(),
                         segment.end(),
                         clipPath.toAbsolutePath().toString(),
-                        thumbPath.toAbsolutePath().toString()));
+                        thumbPath.toAbsolutePath().toString(),
+                        segment.text()));
             } catch (Exception e) {
                 log.error("SRT 클립 생성 중 오류 (Index: {}): {}", index, e.getMessage());
             }

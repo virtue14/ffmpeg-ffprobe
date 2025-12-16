@@ -110,7 +110,8 @@ public class SceneDetectionService {
                 segment.start(),
                 segment.end(),
                 clipPath.toAbsolutePath().toString(),
-                thumbPath.toAbsolutePath().toString()));
+                thumbPath.toAbsolutePath().toString(),
+                null));
       } catch (Exception e) {
         log.error("장면 처리 중 오류 발생 (Index: {}): {}", sceneIndex, e.getMessage());
       }
