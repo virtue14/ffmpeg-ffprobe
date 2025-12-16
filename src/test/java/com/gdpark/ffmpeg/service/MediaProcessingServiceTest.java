@@ -51,7 +51,7 @@ class MediaProcessingServiceTest {
         // Then
         // 파일 이름 및 경로 검증
         assertThat(resultPath).startsWith(workDir);
-        assertThat(resultPath).endsWith(".wav");
+        assertThat(resultPath).endsWith(".mp3");
 
         // FFmpeg 실행 검증
         // MediaProcessingService는 내부적으로 FFmpegExecutor를 생성하고 run()을 호출합니다.
