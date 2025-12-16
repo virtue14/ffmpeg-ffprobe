@@ -1,9 +1,6 @@
 package com.gdpark.ffmpeg.controller;
 
-import com.gdpark.ffmpeg.service.FileStorageService;
-import com.gdpark.ffmpeg.service.MediaInfoService;
-import com.gdpark.ffmpeg.service.MediaProcessingService;
-import com.gdpark.ffmpeg.service.SceneDetectionService;
+import com.gdpark.ffmpeg.service.*;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,6 +38,9 @@ class MediaControllerTest {
 
     @MockBean
     private FileStorageService fileStorageService;
+
+    @MockBean
+    private SttService sttService;
 
     @Test
     @DisplayName("파일 업로드 API 테스트")

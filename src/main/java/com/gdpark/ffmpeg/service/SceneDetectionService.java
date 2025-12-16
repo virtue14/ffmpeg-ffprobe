@@ -2,10 +2,7 @@ package com.gdpark.ffmpeg.service;
 
 import com.gdpark.ffmpeg.dto.SceneDetectionResponse;
 import com.gdpark.ffmpeg.dto.SceneResult;
-import net.bramp.ffmpeg.FFmpeg;
-import net.bramp.ffmpeg.FFmpegExecutor;
 import net.bramp.ffmpeg.FFprobe;
-import net.bramp.ffmpeg.builder.FFmpegBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,23 +27,22 @@ public class SceneDetectionService {
 
   private static final Logger log = LoggerFactory.getLogger(SceneDetectionService.class);
 
-  private final FFmpeg ffmpeg;
   private final FFprobe ffprobe;
   private final String workDir;
+  private final VideoClipService videoClipService;
 
   /**
-   * FFmpeg 및 FFprobe 클라이언트와 작업 디렉토리를 설정하여 SceneDetectionService를 생성합니다.
+   * FFprobe 클라이언트와 작업 디렉토리를 설정하여 SceneDetectionService를 생성합니다.
    *
-   * @param ffmpeg  인코딩 및 영상 타르기 작업을 수행하는 FFmpeg 클라이언트
    * @param ffprobe 미디어 조사 및 장면 타임스탬프 감지에 사용되는 FFprobe 클라이언트
    * @param workDir 생성된 결과물이 저장될 기본 작업 디렉토리 경로
    */
   @Autowired
   public SceneDetectionService(
-      FFmpeg ffmpeg, FFprobe ffprobe, @Value("${ffmpeg.work-dir}") String workDir) {
-    this.ffmpeg = ffmpeg;
+      FFprobe ffprobe, @Value("${ffmpeg.work-dir}") String workDir, VideoClipService videoClipService) {
     this.ffprobe = ffprobe;
     this.workDir = workDir;
+    this.videoClipService = videoClipService;
   }
 
   /**
@@ -61,7 +57,7 @@ public class SceneDetectionService {
    * @param inputPath 입력 비디오 파일 경로
    * @param threshold 장면 감지 민감도 (0.0 ~ 1.0 범위, 값이 클수록 더 큰 변화가 필요)
    * @return 생성된 총 장면 수와 SceneResult 항목 목록을 포함하는 SceneDetectionResponse
-   * @throws IOException 파일 시스템 접근 또는 내부 ffmpeg/ffprobe 작업 실패 시
+   * @throws IOException 파일 시스템 접근 또는 내부 ffprobe 작업 실패 시
    */
   public SceneDetectionResponse detectScenes(String inputPath, double threshold)
       throws IOException {
@@ -103,18 +99,19 @@ public class SceneDetectionService {
 
       try {
         // 비디오 클립 생성
-        createClip(inputPath, segment.start(), segment.duration(), clipPath.toString());
+        videoClipService.createClip(inputPath, segment.start(), segment.duration(), clipPath.toString());
 
         // 썸네일 생성 (구간의 중간 지점)
         double midPoint = segment.start() + (segment.duration() / 2.0);
-        extractThumbnail(inputPath, midPoint, thumbPath.toString());
+        videoClipService.extractThumbnail(inputPath, midPoint, thumbPath.toString());
 
         results.add(
             new SceneResult(
                 segment.start(),
                 segment.end(),
                 clipPath.toAbsolutePath().toString(),
-                thumbPath.toAbsolutePath().toString()));
+                thumbPath.toAbsolutePath().toString(),
+                null));
       } catch (Exception e) {
         log.error("장면 처리 중 오류 발생 (Index: {}): {}", sceneIndex, e.getMessage());
       }
@@ -220,60 +217,6 @@ public class SceneDetectionService {
       log.error("장면 감지 중 오류 발생", e);
     }
     return timestamps;
-  }
-
-  /**
-   * 입력 비디오의 특정 구간을 잘라내어 비디오 클립을 생성하고 디스크에 저장합니다.
-   *
-   * <p>
-   * 비디오와 오디오 모두 스트림 복사(재인코딩 없음)를 사용하여 원본 코덱을 유지하며 처리 속도를 높입니다.
-   *
-   * @param inputPath  원본 비디오 파일 경로
-   * @param start      구간 시작 시간 (초)
-   * @param duration   구간 길이 (초)
-   * @param outputPath 생성된 클립 비디오의 저장 경로
-   * @throws IOException FFmpeg 실행 또는 파일 I/O 실패 시
-   */
-  private void createClip(String inputPath, double start, double duration, String outputPath)
-      throws IOException {
-    long startTime = System.currentTimeMillis();
-
-    FFmpegBuilder builder = new FFmpegBuilder()
-        .setInput(inputPath)
-        .overrideOutputFiles(true)
-        .addOutput(outputPath)
-        .setStartOffset((long) (start * 1000), java.util.concurrent.TimeUnit.MILLISECONDS)
-        .setDuration((long) (duration * 1000), java.util.concurrent.TimeUnit.MILLISECONDS)
-        .setVideoCodec("copy") // 재인코딩 없이 스트림 복사
-        .setAudioCodec("copy") // 오디오 복사
-        .done();
-
-    new FFmpegExecutor(ffmpeg, ffprobe).createJob(builder).run();
-
-    long endTime = System.currentTimeMillis();
-    log.debug("클립 생성 완료: {} (소요시간: {}ms)", outputPath, (endTime - startTime));
-  }
-
-  /**
-   * 비디오의 특정 시점에서 단일 프레임을 추출하여 이미지 파일로 저장합니다.
-   *
-   * @param inputPath  원본 비디오 경로
-   * @param time       프레임을 추출할 시점 (초)
-   * @param outputPath 결과 이미지가 저장될 경로
-   * @throws IOException 프레임 추출 또는 파일 쓰기 실패 시
-   */
-  private void extractThumbnail(String inputPath, double time, String outputPath)
-      throws IOException {
-    FFmpegBuilder builder = new FFmpegBuilder()
-        .setInput(inputPath)
-        .overrideOutputFiles(true)
-        .addOutput(outputPath)
-        .setStartOffset((long) (time * 1000), java.util.concurrent.TimeUnit.MILLISECONDS)
-        .setFrames(1)
-        .setFormat("image2")
-        .done();
-
-    new FFmpegExecutor(ffmpeg, ffprobe).createJob(builder).run();
   }
 
   /**

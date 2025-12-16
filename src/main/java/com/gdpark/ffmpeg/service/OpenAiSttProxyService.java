@@ -58,7 +58,7 @@ public class OpenAiSttProxyService implements SttService {
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
             body.add("file", new FileSystemResource(audioFile));
             body.add("language", "ko");
-            body.add("responseFormat", "json");
+            body.add("responseFormat", "srt");
 
             HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
 
